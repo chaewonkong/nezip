@@ -7,8 +7,8 @@ import (
 	"math"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
-
 	"time"
 
 	"github.com/chaewonkong/nezip/internal/api"
@@ -70,9 +70,15 @@ var g3Apts59 = []g3Apt{
 func main() {
 	ctx := context.Background()
 
-	if len(os.Args) > 1 && os.Args[1] == "cache" {
-		runCache(ctx)
-		return
+	if len(os.Args) > 1 {
+		switch os.Args[1] {
+		case "cache":
+			runCache(ctx)
+			return
+		case "search":
+			runSearch(ctx)
+			return
+		}
 	}
 
 	var (
@@ -89,6 +95,7 @@ func main() {
 
 	if aptName == "" || area == 0 || lawdCD == "" {
 		fmt.Fprintln(os.Stderr, "usage: nezip --apt <아파트명> --area <면적> --lawd <LAWD_CD> [--human]")
+		fmt.Fprintln(os.Stderr, "       nezip search --apt <키워드> --lawd <LAWD_CD>")
 		os.Exit(1)
 	}
 
@@ -366,6 +373,51 @@ func selectG3List(area float64, aptName, lawdCD string) []g3Apt {
 		result = append(result, a)
 	}
 	return result
+}
+
+func runSearch(ctx context.Context) {
+	fs := flag.NewFlagSet("search", flag.ExitOnError)
+	var keyword, lawdCD string
+	fs.StringVar(&keyword, "apt", "", "검색 키워드")
+	fs.StringVar(&lawdCD, "lawd", "", "법정동코드")
+	fs.Parse(os.Args[2:])
+
+	if keyword == "" || lawdCD == "" {
+		fmt.Fprintln(os.Stderr, "usage: nezip search --apt <키워드> --lawd <LAWD_CD>")
+		os.Exit(1)
+	}
+
+	apiKey := os.Getenv("MOLIT_API_KEY")
+	if apiKey == "" {
+		fmt.Fprintln(os.Stderr, "MOLIT_API_KEY 환경변수가 설정되지 않았습니다")
+		os.Exit(1)
+	}
+	client := api.NewClient(apiKey)
+
+	months := api.Last36Months()[:3]
+	fetched, err := client.FetchMonths(ctx, lawdCD, months)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "error:", err)
+	}
+
+	seen := make(map[string]bool)
+	for _, trades := range fetched {
+		for _, t := range trades {
+			if strings.Contains(t.AptName, keyword) {
+				seen[t.AptName] = true
+			}
+		}
+	}
+
+	if len(seen) == 0 {
+		fmt.Printf("'%s' 키워드와 일치하는 아파트가 없습니다 (LAWD_CD: %s, 최근 3개월 기준)\n", keyword, lawdCD)
+		os.Exit(1)
+	}
+
+	fmt.Printf("'%s' 키워드 검색 결과 (LAWD_CD: %s):\n", keyword, lawdCD)
+	for name := range seen {
+		fmt.Println(" -", name)
+	}
 }
 
 func runCache(ctx context.Context) {

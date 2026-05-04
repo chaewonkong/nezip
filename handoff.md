@@ -10,15 +10,22 @@ SQLite 캐싱으로 수 초 내 결과를 내는 것이 목표.
 
 ## 현재 상태
 
-**빌드 완료, 테스트 통과. 실제 API 호출 테스트 미완료.**
+**빌드 완료, 바이너리 배포 완료, SKILL.md 업데이트 완료.**
 
-Claude Code Bash tool의 sandbox가 네트워크를 차단해 직접 실행 검증이 안 됨.
-`~/.claude/settings.json`에 `sandbox.network.allowedDomains: ["apis.data.go.kr"]` 추가했으니
-**Claude Code 재시작 후** 테스트 필요.
+- `nezip` 바이너리: `~/.claude/skills/apt-check/nezip` (PATH 불필요)
+- SKILL.md: `nezip` → `~/.claude/skills/apt-check/nezip` 절대경로로 전면 교체
+- `search` 서브커맨드 포함 전체 빌드 반영됨
 
+재빌드 후 배포:
 ```bash
 cd /Users/leon/dev/personal/nezip
-go run ./cmd --apt 파크타운서안 --area 59 --lawd 41135 --human
+go build -o nezip ./cmd/nezip
+cp nezip ~/.claude/skills/apt-check/nezip
+```
+
+동작 검증:
+```bash
+/apt-check 헬리오시티 84
 ```
 
 ---
@@ -27,7 +34,7 @@ go run ./cmd --apt 파크타운서안 --area 59 --lawd 41135 --human
 
 ```
 nezip/
-├── cmd/main.go              # CLI 진입점 + 전체 오케스트레이션
+├── cmd/nezip/main.go        # CLI 진입점 (analyze / search / cache 서브커맨드)
 ├── internal/
 │   ├── api/client.go        # 국토부 HTTP 클라이언트 (병렬 goroutine)
 │   ├── cache/
@@ -52,16 +59,20 @@ nezip/
 ## CLI 인터페이스
 
 ```bash
+# 아파트명 검색 (API에 등록된 정확한 이름 확인용)
+nezip search --apt <키워드> --lawd <LAWD_CD>
+nezip search --apt "파크타운" --lawd 41135
+
 # 메인 분석
-nezip --apt <아파트명> --area <면적㎡> --lawd <LAWD_CD>
-nezip --apt 헬리오시티 --area 84 --lawd 11710 --human
+nezip --apt <아파트명> --area <면적㎡> --lawd <LAWD_CD> [--human]
+nezip --apt "헬리오시티" --area 84 --lawd 11710 --human
 
 # 캐시 관리 (미구현)
 nezip cache refresh
 nezip cache status
 ```
 
-- `--apt`: `strings.Contains` 매칭. 긴 이름이면 핵심 키워드만 넣어도 됨
+- `--apt`: `strings.Contains` 매칭. `search`로 정확한 이름 확인 후 사용 권장
 - `--lawd`: 5자리 법정동코드 (SKILL.md 내 테이블 참고)
 - `--human`: 텍스트 리포트 출력. 없으면 JSON stdout
 
@@ -73,7 +84,20 @@ nezip cache status
 |------|------|
 | `MOLIT_API_KEY` | 국토부 API 인증키 (URL 디코딩된 값) |
 
-`~/.claude/settings.json`의 `env` 섹션에 이미 설정됨.
+`~/.claude/settings.json`의 `env` 섹션에 설정됨.
+
+---
+
+## SKILL.md 연동
+
+`~/.claude/skills/apt-check/SKILL.md` 업데이트 완료.
+
+워크플로:
+1. 사용자 입력 파싱 (아파트명, 평형 → ㎡)
+2. 법정동 코드 추론 (표 조회 또는 WebSearch)
+3. `nezip search --apt <키워드> --lawd <LAWD_CD>` 로 정확한 아파트명 확인
+4. `nezip --apt <정확한 이름> --area <면적> --lawd <LAWD_CD> --human` 실행
+5. stdout 결과를 그대로 출력
 
 ---
 
@@ -84,7 +108,7 @@ main.go
   ├── fetchAndCacheApt()     # 대상 아파트 36개월 조회·저장
   ├── fetchAndCacheG3()      # 강남3구 기준 아파트 조회·저장
   │     └── 구별 goroutine   # 11650·11680·11710 동시 실행
-  │           └── FetchMonths() → 36개월 병렬 HTTP
+  │           └── FetchMonths() → 병렬 HTTP (동시성 1)
   ├── calc.AnalyzeWithCurrent()
   ├── calc.Gangnam3Avg()
   ├── calc.FollowRate()
@@ -119,10 +143,10 @@ CREATE TABLE prices (
 
 ## 강남3구 기준 아파트
 
-면적 기준으로 두 그룹:
+면적 기준으로 두 그룹 (각 14~16개 아파트):
 
-- **84㎡ 기준** (54㎡ 미만 또는 64㎡ 초과): 16개 아파트 (잠실주공5단지, 래미안퍼스티지, 반포자이, 아크로리버파크, 래미안대치팰리스, 헬리오시티 + 10개)
-- **59㎡ 기준** (54~64㎡): 14개 아파트
+- **84㎡ 기준** (54㎡ 미만 또는 64㎡ 초과): 잠실주공5단지, 래미안퍼스티지, 반포자이, 아크로리버파크, 래미안대치팰리스, 헬리오시티 외 10개
+- **59㎡ 기준** (54~64㎡): 아크로리버파크, 래미안퍼스티지, 반포자이, 헬리오시티 외 10개
 
 대상 아파트가 강남3구 목록과 겹치면 자동 제외.
 
@@ -130,21 +154,6 @@ CREATE TABLE prices (
 
 ## 미완료 항목
 
+- [ ] `/apt-check` 스킬 E2E 검증 (직접 아파트 검색으로 확인)
 - [ ] `nezip cache refresh` / `cache status` 구현
 - [ ] API 키 config 파일 지원 (`~/.config/nezip/config.toml`)
-- [ ] Claude Code 재시작 후 실제 API 호출 검증
-- [ ] SKILL.md 업데이트 (WebFetch → `nezip` 바이너리 호출로 변경)
-- [ ] `go install` 등록 및 `$PATH` 확인
-
----
-
-## SKILL.md 연동 계획
-
-현재 SKILL.md는 Claude가 WebFetch로 직접 API를 호출함.
-바이너리 검증 완료 후 SKILL.md의 STEP 2~5를 아래로 교체:
-
-```
-STEP 2~5 → Bash tool로 nezip 실행:
-  nezip --apt {아파트명} --area {면적} --lawd {LAWD_CD}
-  결과 JSON을 받아 STEP 7 리포트 포맷팅만 수행
-```
