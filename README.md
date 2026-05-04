@@ -18,7 +18,7 @@ Claude Code의 `nezip` 스킬과 MCP 서버로 연동하여 자연어로 아파�
 ### 1. 바이너리 설치
 
 ```bash
-go install github.com/chaewonkong/nezip@latest
+go install github.com/chaewonkong/nezip/cmd/nezip@latest
 ```
 
 ### 2. MCP 서버 등록
@@ -156,6 +156,6 @@ nezip/
 
 ## 환경변수
 
-| 변수 | 설명 |
-|------|------|
+| 변수            | 설명                                         |
+| --------------- | -------------------------------------------- |
 | `MOLIT_API_KEY` | 국토부 실거래가 API 인증키 (URL 디코딩된 값) |
