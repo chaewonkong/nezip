@@ -10,11 +10,12 @@ SQLite 캐싱으로 수 초 내 결과를 내는 것이 목표.
 
 ## 현재 상태
 
-**빌드 완료, 바이너리 배포 완료, SKILL.md 업데이트 완료.**
+**빌드 완료, 바이너리 배포 완료, SKILL.md 업데이트 완료, E2E 검증 완료.**
 
 - `nezip` 바이너리: `~/.claude/skills/apt-check/nezip` (PATH 불필요)
-- SKILL.md: `nezip` → `~/.claude/skills/apt-check/nezip` 절대경로로 전면 교체
-- `search` 서브커맨드 포함 전체 빌드 반영됨
+- SKILL.md: search 필수화 + --human 제거 (JSON → Claude 포맷 출력)
+- `nezip search`: `--apt` 제거, `--lawd`만으로 전체 목록 반환 (`api.Last3Months()` 사용)
+- E2E 검증 완료: `/apt-check 파크타운서안 59` → `파크타운(서안)` 정상 매칭 및 분석
 
 재빌드 후 배포:
 ```bash
@@ -25,6 +26,7 @@ cp nezip ~/.claude/skills/apt-check/nezip
 
 동작 검증:
 ```bash
+/apt-check 파크타운서안 59
 /apt-check 헬리오시티 84
 ```
 
@@ -59,12 +61,15 @@ nezip/
 ## CLI 인터페이스
 
 ```bash
-# 아파트명 검색 (API에 등록된 정확한 이름 확인용)
-nezip search --apt <키워드> --lawd <LAWD_CD>
-nezip search --apt "파크타운" --lawd 41135
+# 법정동 전체 아파트 목록 조회 (최근 3개월 기준)
+nezip search --lawd <LAWD_CD>
+nezip search --lawd 41135
 
-# 메인 분석
-nezip --apt <아파트명> --area <면적㎡> --lawd <LAWD_CD> [--human]
+# 메인 분석 (JSON stdout)
+nezip --apt <아파트명> --area <면적㎡> --lawd <LAWD_CD>
+nezip --apt "파크타운(서안)" --area 59 --lawd 41135
+
+# 직접 사용 시 텍스트 출력
 nezip --apt "헬리오시티" --area 84 --lawd 11710 --human
 
 # 캐시 관리 (미구현)
@@ -72,9 +77,10 @@ nezip cache refresh
 nezip cache status
 ```
 
-- `--apt`: `strings.Contains` 매칭. `search`로 정확한 이름 확인 후 사용 권장
+- `search`: `--apt` 없음. 법정동 전체 목록 반환 → skill(Claude)이 이름 매칭
+- `--apt`: API에 등록된 정확한 이름 사용 (괄호 포함, 예: `파크타운(서안)`)
 - `--lawd`: 5자리 법정동코드 (SKILL.md 내 테이블 참고)
-- `--human`: 텍스트 리포트 출력. 없으면 JSON stdout
+- `--human`: 텍스트 리포트 출력 (직접 CLI 사용 시). 없으면 JSON stdout
 
 ---
 
@@ -95,9 +101,9 @@ nezip cache status
 워크플로:
 1. 사용자 입력 파싱 (아파트명, 평형 → ㎡)
 2. 법정동 코드 추론 (표 조회 또는 WebSearch)
-3. `nezip search --apt <키워드> --lawd <LAWD_CD>` 로 정확한 아파트명 확인
-4. `nezip --apt <정확한 이름> --area <면적> --lawd <LAWD_CD> --human` 실행
-5. stdout 결과를 그대로 출력
+3. `nezip search --lawd <LAWD_CD>` 로 전체 목록 조회 → Claude가 이름 매칭
+4. `nezip --apt <정확한 이름> --area <면적> --lawd <LAWD_CD>` 실행 (JSON)
+5. JSON 파싱 후 Claude가 보기 좋게 포맷해서 출력
 
 ---
 
@@ -154,6 +160,6 @@ CREATE TABLE prices (
 
 ## 미완료 항목
 
-- [ ] `/apt-check` 스킬 E2E 검증 (직접 아파트 검색으로 확인)
+- [x] `/apt-check` 스킬 E2E 검증 완료 (파크타운서안 59 → 파크타운(서안) 정상 동작)
 - [ ] `nezip cache refresh` / `cache status` 구현
 - [ ] API 키 config 파일 지원 (`~/.config/nezip/config.toml`)

@@ -7,7 +7,6 @@ import (
 	"math"
 	"os"
 	"path/filepath"
-	"strings"
 	"sync"
 	"time"
 
@@ -95,7 +94,7 @@ func main() {
 
 	if aptName == "" || area == 0 || lawdCD == "" {
 		fmt.Fprintln(os.Stderr, "usage: nezip --apt <아파트명> --area <면적> --lawd <LAWD_CD> [--human]")
-		fmt.Fprintln(os.Stderr, "       nezip search --apt <키워드> --lawd <LAWD_CD>")
+		fmt.Fprintln(os.Stderr, "       nezip search --lawd <LAWD_CD>")
 		os.Exit(1)
 	}
 
@@ -377,13 +376,12 @@ func selectG3List(area float64, aptName, lawdCD string) []g3Apt {
 
 func runSearch(ctx context.Context) {
 	fs := flag.NewFlagSet("search", flag.ExitOnError)
-	var keyword, lawdCD string
-	fs.StringVar(&keyword, "apt", "", "검색 키워드")
+	var lawdCD string
 	fs.StringVar(&lawdCD, "lawd", "", "법정동코드")
 	fs.Parse(os.Args[2:])
 
-	if keyword == "" || lawdCD == "" {
-		fmt.Fprintln(os.Stderr, "usage: nezip search --apt <키워드> --lawd <LAWD_CD>")
+	if lawdCD == "" {
+		fmt.Fprintln(os.Stderr, "usage: nezip search --lawd <LAWD_CD>")
 		os.Exit(1)
 	}
 
@@ -394,29 +392,27 @@ func runSearch(ctx context.Context) {
 	}
 	client := api.NewClient(apiKey)
 
-	months := api.Last36Months()[:3]
+	months := api.Last3Months()
 	fetched, err := client.FetchMonths(ctx, lawdCD, months)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "error:", err)
+		os.Exit(1)
 	}
 
 	seen := make(map[string]bool)
 	for _, trades := range fetched {
 		for _, t := range trades {
-			if strings.Contains(t.AptName, keyword) {
-				seen[t.AptName] = true
-			}
+			seen[t.AptName] = true
 		}
 	}
 
 	if len(seen) == 0 {
-		fmt.Printf("'%s' 키워드와 일치하는 아파트가 없습니다 (LAWD_CD: %s, 최근 3개월 기준)\n", keyword, lawdCD)
+		fmt.Fprintf(os.Stderr, "아파트 목록을 가져올 수 없습니다 (LAWD_CD: %s)\n", lawdCD)
 		os.Exit(1)
 	}
 
-	fmt.Printf("'%s' 키워드 검색 결과 (LAWD_CD: %s):\n", keyword, lawdCD)
 	for name := range seen {
-		fmt.Println(" -", name)
+		fmt.Println(name)
 	}
 }
 

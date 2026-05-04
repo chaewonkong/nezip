@@ -214,6 +214,16 @@ func Last36Months() []string {
 	return months
 }
 
+// Last3Months returns the most recent 3 months in YYYYMM format, newest first.
+func Last3Months() []string {
+	now := time.Now()
+	months := make([]string, 3)
+	for i := range months {
+		months[i] = now.AddDate(0, -i, 0).Format("200601")
+	}
+	return months
+}
+
 func parseDealAmount(s string) (int, error) {
 	s = strings.ReplaceAll(s, ",", "")
 	s = strings.TrimSpace(s)
