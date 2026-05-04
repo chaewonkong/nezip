@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"math"
 	"net/http"
 	"net/url"
@@ -45,7 +46,7 @@ func (c *Client) FetchMonths(ctx context.Context, lawdCD string, months []string
 		result = make(map[string][]Trade, len(months))
 		errs   []error
 		wg     sync.WaitGroup
-		sem    = make(chan struct{}, 10)
+		sem    = make(chan struct{}, 1)
 	)
 
 	for _, month := range months {
@@ -92,21 +93,41 @@ func (c *Client) fetchOne(ctx context.Context, lawdCD, month string) ([]Trade, e
 	}
 	defer resp.Body.Close()
 
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("read body: %w", err)
+	}
+
 	var raw struct {
 		Response struct {
 			Body struct {
-				Items struct {
-					Item json.RawMessage `json:"item"`
-				} `json:"items"`
+				Items json.RawMessage `json:"items"`
 			} `json:"body"`
 		} `json:"response"`
 	}
 
-	if err := json.NewDecoder(resp.Body).Decode(&raw); err != nil {
-		return nil, fmt.Errorf("decode response: %w", err)
+	if err := json.Unmarshal(body, &raw); err != nil {
+		preview := string(body)
+		if len(preview) > 80 {
+			preview = preview[:80]
+		}
+		return nil, fmt.Errorf("decode response: %w (body: %s)", err, preview)
 	}
 
-	item := raw.Response.Body.Items.Item
+	rawItems := raw.Response.Body.Items
+	if len(rawItems) == 0 || string(rawItems) == "null" || string(rawItems) == `""` {
+		return nil, nil
+	}
+
+	var itemsObj struct {
+		Item json.RawMessage `json:"item"`
+	}
+	if err := json.Unmarshal(rawItems, &itemsObj); err != nil {
+		// API가 items를 string으로 반환하는 경우 (데이터 없음)
+		return nil, nil
+	}
+
+	item := itemsObj.Item
 	if len(item) == 0 || string(item) == "null" || string(item) == `""` {
 		return nil, nil
 	}
