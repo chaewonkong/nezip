@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"io"
 	"math"
-	"nezip/internal/calc"
+	"github.com/chaewonkong/nezip/internal/calc"
 	"strings"
 )
 

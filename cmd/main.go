@@ -11,10 +11,10 @@ import (
 
 	"time"
 
-	"nezip/internal/api"
-	"nezip/internal/cache"
-	"nezip/internal/calc"
-	"nezip/internal/report"
+	"github.com/chaewonkong/nezip/internal/api"
+	"github.com/chaewonkong/nezip/internal/cache"
+	"github.com/chaewonkong/nezip/internal/calc"
+	"github.com/chaewonkong/nezip/internal/report"
 	_ "modernc.org/sqlite"
 )
 

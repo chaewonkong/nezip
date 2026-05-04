@@ -1,4 +1,4 @@
-module nezip
+module github.com/chaewonkong/nezip
 
 go 1.25.5
 

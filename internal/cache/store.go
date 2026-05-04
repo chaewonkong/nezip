@@ -8,7 +8,7 @@ import (
 	"math"
 	"time"
 
-	"nezip/internal/db"
+	"github.com/chaewonkong/nezip/internal/db"
 )
 
 //go:embed schema.sql
