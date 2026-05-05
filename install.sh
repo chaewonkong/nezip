@@ -3,7 +3,16 @@ set -e
 
 REPO="chaewonkong/nezip"
 BINARY="nezip"
-INSTALL_DIR="${INSTALL_DIR:-/usr/local/bin}"
+
+# Default: /usr/local/bin if writable (root), otherwise ~/.local/bin (no sudo)
+if [ -z "$INSTALL_DIR" ]; then
+  if [ -w "/usr/local/bin" ]; then
+    INSTALL_DIR="/usr/local/bin"
+  else
+    INSTALL_DIR="$HOME/.local/bin"
+  fi
+fi
+mkdir -p "$INSTALL_DIR"
 
 # Detect OS
 OS="$(uname -s)"
@@ -45,14 +54,14 @@ echo "Downloading nezip ${VERSION} (${OS}/${ARCH})..."
 curl -fsSL "$URL" -o "${TMP_DIR}/${ARCHIVE}"
 tar -xzf "${TMP_DIR}/${ARCHIVE}" -C "$TMP_DIR"
 
-# Install
-if [ -w "$INSTALL_DIR" ]; then
-  mv "${TMP_DIR}/${BINARY}" "${INSTALL_DIR}/${BINARY}"
-else
-  echo "Installing to ${INSTALL_DIR} (requires sudo)..."
-  sudo mv "${TMP_DIR}/${BINARY}" "${INSTALL_DIR}/${BINARY}"
-fi
+mv "${TMP_DIR}/${BINARY}" "${INSTALL_DIR}/${BINARY}"
 
 chmod +x "${INSTALL_DIR}/${BINARY}"
 echo "Installed: ${INSTALL_DIR}/${BINARY}"
 "${INSTALL_DIR}/${BINARY}" --version 2>/dev/null || true
+
+case ":$PATH:" in
+  *":${INSTALL_DIR}:"*) ;;
+  *) echo "NOTE: ${INSTALL_DIR} is not in PATH. Add the following to your shell profile:" \
+     && echo "  export PATH=\"${INSTALL_DIR}:\$PATH\"" ;;
+esac
