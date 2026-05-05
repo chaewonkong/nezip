@@ -12,7 +12,11 @@ Claude Code의 `nezip` 스킬과 MCP 서버로 연동하여 자연어로 아파�
 
 ## Claude Code 연동 설치
 
-> Claude Code에 이 README를 넘기면 아래 단계를 대신 실행해줄 수 있다.
+> 아래 메시지를 복사해서 Claude Code에 붙여넣으면 설치를 자동으로 진행해준다.
+
+```
+https://raw.githubusercontent.com/chaewonkong/nezip/main/README.md 를 읽고, nezip을 설치해줘. MOLIT_API_KEY는 내가 직접 설정할게.
+```
 
 ### 1. 바이너리 설치
 
