@@ -10,7 +10,30 @@ Claude Code의 `nezip` 스킬과 MCP 서버로 연동하여 자연어로 아파�
 ## 사전 요구사항
 
 - Claude Code CLI (`claude`)
-- 국토부 실거래가 API 키 ([발급](https://www.data.go.kr/data/15058747/openapi.do))
+- 국토부 실거래가 API 키
+
+<details>
+<summary>API 키 발급 방법 (펼치기)</summary>
+
+API가 정상 동작하려면 아래 세 가지가 모두 갖춰져야 한다.
+
+**a) 공공데이터포털 회원가입**
+[data.go.kr](https://www.data.go.kr) 에서 회원가입
+
+**b) 활용신청 완료**
+[국토부 아파트매매 실거래가 자료](https://www.data.go.kr/data/15126469/openapi.do) 페이지에서 **활용신청** 버튼 클릭 후 승인 대기 (보통 즉시~수 시간 내 자동 승인)
+
+**c) API 키 확인 및 디코딩**
+마이페이지 → 인증키 발급현황에서 **일반 인증키**를 확인한다.
+키에 `%2B`, `%2F` 등 URL 인코딩 문자가 포함된 경우, 디코딩된 값을 사용해야 한다.
+
+```
+%2B → +
+%2F → /
+%3D → =
+```
+
+</details>
 
 ## Claude Code 연동 설치
 
@@ -32,27 +55,12 @@ curl -fsSL https://raw.githubusercontent.com/chaewonkong/nezip/main/install.sh |
 INSTALL_DIR=~/.local/bin curl -fsSL https://raw.githubusercontent.com/chaewonkong/nezip/main/install.sh | sh
 ```
 
-### 2. MCP 서버 등록
+> 기본 설치 경로: root 권한이 있으면 `/usr/local/bin`, 없으면 `~/.local/bin`. 설치 후 출력되는 경로를 확인해둔다.
 
-```bash
-claude mcp add --scope user nezip ~/go/bin/nezip mcp
-```
+### 2. API 키 설정
 
-등록 확인:
-
-```bash
-claude mcp list
-```
-
-### 3. nezip 스킬 설치
-
-```bash
-mkdir -p ~/.claude/skills/nezip
-curl -fsSL https://raw.githubusercontent.com/chaewonkong/nezip/main/SKILL.md \
-  -o ~/.claude/skills/nezip/SKILL.md
-```
-
-### 4. API 키 설정
+> **MCP 서버를 등록하기 전에 반드시 API 키를 먼저 설정해야 한다.**
+> MCP 서버는 등록 즉시 실행되므로, 이후 키를 추가해도 재시작 전까지 반영되지 않는다.
 
 `~/.claude/settings.json`의 `env` 섹션에 추가:
 
@@ -64,7 +72,29 @@ curl -fsSL https://raw.githubusercontent.com/chaewonkong/nezip/main/SKILL.md \
 }
 ```
 
-> API 키는 공공데이터포털에서 발급 후 URL 디코딩해서 사용. `%2B` → `+` 등.
+### 3. MCP 서버 등록
+
+API 키 설정을 완료한 뒤 실행한다.
+
+```bash
+claude mcp add --scope user nezip ~/.local/bin/nezip mcp
+```
+
+> 설치 경로가 다르면 1단계에서 확인한 경로로 대체한다. (예: `/usr/local/bin/nezip`)
+
+등록 확인:
+
+```bash
+claude mcp list
+```
+
+### 4. nezip 스킬 설치
+
+```bash
+mkdir -p ~/.claude/skills/nezip
+curl -fsSL https://raw.githubusercontent.com/chaewonkong/nezip/main/SKILL.md \
+  -o ~/.claude/skills/nezip/SKILL.md
+```
 
 ### 5. Claude Code 재시작
 
