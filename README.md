@@ -38,7 +38,7 @@ claude mcp add --scope user nezip ~/go/bin/nezip mcp
 claude mcp list
 ```
 
-### 3. apt-check 스킬 설치
+### 3. nezip 스킬 설치
 
 ```bash
 mkdir -p ~/.claude/skills/nezip
@@ -154,7 +154,7 @@ nezip/
 │   ├── db/              # sqlc 생성 코드 (직접 수정 금지)
 │   ├── report/          # JSON / --human 출력 포맷
 │   └── service/         # 핵심 로직 (Search, Analyze) — CLI·MCP 공유
-├── SKILL.md             # apt-check 스킬 정의
+├── SKILL.md             # nezip 스킬 정의
 ├── sqlc.yaml
 └── go.mod
 ```
