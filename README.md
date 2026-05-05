@@ -7,7 +7,6 @@ Claude Code의 `nezip` 스킬과 MCP 서버로 연동하여 자연어로 아파�
 
 ## 사전 요구사항
 
-- Go 1.21+
 - Claude Code CLI (`claude`)
 - 국토부 실거래가 API 키 ([발급](https://www.data.go.kr/data/15058747/openapi.do))
 
@@ -18,7 +17,13 @@ Claude Code의 `nezip` 스킬과 MCP 서버로 연동하여 자연어로 아파�
 ### 1. 바이너리 설치
 
 ```bash
-go install github.com/chaewonkong/nezip/cmd/nezip@latest
+curl -fsSL https://raw.githubusercontent.com/chaewonkong/nezip/main/install.sh | sh
+```
+
+설치 경로를 바꾸고 싶으면:
+
+```bash
+INSTALL_DIR=~/.local/bin curl -fsSL https://raw.githubusercontent.com/chaewonkong/nezip/main/install.sh | sh
 ```
 
 ### 2. MCP 서버 등록

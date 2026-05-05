@@ -7,8 +7,11 @@ import (
 	_ "modernc.org/sqlite"
 )
 
+var version = "dev"
+
 func main() {
 	rootCmd := cmd.New(
+		version,
 		cmd.NewAnalyzeCmd(),
 		cmd.NewSearchCmd(),
 		cmd.NewMCPCmd(),

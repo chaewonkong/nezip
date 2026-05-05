@@ -16,10 +16,11 @@ import (
 	mcpserver "github.com/mark3labs/mcp-go/server"
 )
 
-func New(cmds ...*cobra.Command) *cobra.Command {
+func New(version string, cmds ...*cobra.Command) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "nezip",
-		Short: "아파트 투자 가치 분석 도구",
+		Use:     "nezip",
+		Short:   "아파트 투자 가치 분석 도구",
+		Version: version,
 	}
 
 	cmd.AddCommand(cmds...)

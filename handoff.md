@@ -27,7 +27,7 @@ README.md의 설치 가이드를 Claude Code에 넘기면 자동으로 실행됨
 
 ```bash
 # 1. 바이너리 설치
-go install github.com/chaewonkong/nezip@latest
+curl -fsSL https://raw.githubusercontent.com/chaewonkong/nezip/main/install.sh | sh
 
 # 2. MCP 서버 등록
 claude mcp add --scope user nezip ~/go/bin/nezip mcp
