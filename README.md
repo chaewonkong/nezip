@@ -74,10 +74,13 @@ INSTALL_DIR=~/.local/bin curl -fsSL https://raw.githubusercontent.com/chaewonkon
 
 ### 3. MCP 서버 등록
 
-API 키 설정을 완료한 뒤 실행한다.
+먼저 API 키가 올바르게 등록되었는지 확인한다:
 
 ```bash
-claude mcp add --scope user nezip ~/.local/bin/nezip mcp
+grep -q '"MOLIT_API_KEY"' ~/.claude/settings.json \
+  && echo "✓ API 키 확인됨. MCP 서버를 등록합니다." \
+  && claude mcp add --scope user nezip ~/.local/bin/nezip mcp \
+  || echo "✗ API 키가 없습니다. 2단계로 돌아가 settings.json에 MOLIT_API_KEY를 먼저 추가하세요."
 ```
 
 > 설치 경로가 다르면 1단계에서 확인한 경로로 대체한다. (예: `/usr/local/bin/nezip`)
@@ -98,7 +101,7 @@ curl -fsSL https://raw.githubusercontent.com/chaewonkong/nezip/main/SKILL.md \
 
 ### 5. Claude Code 재시작
 
-MCP 서버 반영을 위해 Claude Code를 재시작한다.
+Claude Code를 재시작한다. `settings.json`의 `env`는 시작 시점에만 로드되므로, 재시작 후에야 MCP 서버가 `MOLIT_API_KEY`를 인식하고 정상 동작한다.
 
 ### 검증
 
